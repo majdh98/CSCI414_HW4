@@ -1,0 +1,3 @@
+#!/bin/sh
+disk_name="ada1"
+partition_name= 
