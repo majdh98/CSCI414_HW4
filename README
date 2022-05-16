@@ -1,0 +1,12 @@
+Authors: Agastya Ahluwalia, Majd Hamdan
+
+Included is fs_find.c which can be compiled using the Makefile. At the moment, 
+fs_find.c can only print the content of the root directory and the 
+content for file1 in p1.img. p1.img is a 30mb partition with only one file 
+(file1) that contains 137 occurrences of the letter a. 
+
+The files dinode.h, dir.h, fs.h, and *.img must be in the same directory as
+fs_find.c. 
+
+The hexdump of p1.img, dumpfs of p1.img, and p1.img can be found using the 
+link: https://github.com/majdh98/CSCI414_HW4 
