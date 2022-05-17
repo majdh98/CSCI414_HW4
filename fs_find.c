@@ -176,6 +176,7 @@ int main(int argc, char *argv[])
 void traverse_dir_inode(uint64_t inode_index, char* preface){
     struct ufs2_dinode* inode = (struct ufs2_dinode*)&buff[inode_index];
     for (int i = 0; i < UFS_NDADDR; i++){
+    	printf("%d\n", i);
         if (inode->di_db[i] == 0){
             break;
         }
