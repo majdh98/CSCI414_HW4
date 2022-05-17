@@ -1,14 +1,17 @@
 Authors: Agastya Ahluwalia, Majd Hamdan
 
-Included is fs_find.c which can be compiled using the Makefile. At the moment, 
-fs_find.c can only print the content of the root directory and the 
-content for file1 in p1.img. p1.img is a 30mb partition with only one file 
-(file1) that contains 137 occurrences of the letter a. It can also print the 
-content of file1 (uncomment lines 124-131 to observe this behavior).
+Included is fs_find.c and fs_cat.c which can be compiled using the Makefile. At the moment, 
+both programs can deal with directories and files with size less than 12 blocks (384kib).
+We tested these programs on p1.img, p2.img, p3.img, and p4.img which can be found 
+here: https://github.com/majdh98/CSCI414_HW4 along with their hexdump and dumpfs.
 
-To run the program on p1.img, run the following on a terminal:
+
+To run fs_find on p1.img, run the following on a terminal:
 $ make
 $ ./fs_find p1.img
+To run fs_cat on p1.img,  run the following on a terminal:
+$ make
+$ ./fs_find p1.img <path>
 
 REQUIREMENTS: The files dinode.h, dir.h, fs.h, and *.img must be in the same directory as
 fs_find.c. 
@@ -18,6 +21,3 @@ image is being copied to a heap buffer of the same size. When the disk is large,
 the heap might not have enough space for the buffer. This behavior can be 
 optimized by using combinations of lseek and read depending on the situation. 
 
-
-The hexdump of p1.img, dumpfs of p1.img, and p1.img can be found using the 
-link: https://github.com/majdh98/CSCI414_HW4.

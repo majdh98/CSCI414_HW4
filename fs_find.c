@@ -75,10 +75,10 @@ int main(int argc, char *argv[])
     }
 
 
-	printf("block size: %d\n", block_size);
-    printf("frag size: %d\n", frag_size);
-    printf("inode size: %d\n", 256);
-    printf("super block: %d\n", 65536);
+	// printf("block size: %d\n", block_size);
+    // printf("frag size: %d\n", frag_size);
+    // printf("inode size: %d\n", 256);
+    // printf("super block: %d\n", 65536);
 	/*for this test file, the number of cylinders is 4. The parent directory is located in inode 2 of c group 0.
 	// from dinode.h:
 

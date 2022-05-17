@@ -89,10 +89,10 @@ int main(int argc, char *argv[])
     }
 
 
-    printf("block size: %d\n", block_size);
-    printf("frag size: %d\n", frag_size);
-    printf("inode size: %d\n", 256);
-    printf("super block: %d\n", 65536);
+    // printf("block size: %d\n", block_size);
+    // printf("frag size: %d\n", frag_size);
+    // printf("inode size: %d\n", 256);
+    // printf("super block: %d\n", 65536);
     /*for this test file, the number of cylinders is 4. The parent directory is located in inode 2 of c group 0.
     // from dinode.h:
 
@@ -162,7 +162,6 @@ void traverse_dir_data_block(uint64_t block_index, uint64_t di_size){
                     if(dir->d_type != DT_DIR && !strcmp(dir->d_name, tokens[tokens_index])){
                         traverse_file_inode( find_inode_index(dir->d_ino));
                         found = 1;
-                        printf("%s\n", dir->d_name);
                         break;
                     }
                 }
@@ -172,7 +171,6 @@ void traverse_dir_data_block(uint64_t block_index, uint64_t di_size){
                     //find current dir inode index and pass it to traverse_dir_inode
                     uint64_t inode_index = find_inode_index(dir->d_ino);
                     traverse_dir_inode(inode_index);
-                    printf("%s\n", dir->d_name);
                     break;
                 }
             }
@@ -202,7 +200,6 @@ void traverse_file_inode(uint64_t inode_index){
 }
 
 uint64_t print_file_data_block(uint64_t block_index, uint64_t di_size){
-    printf("%d\n",di_size);
     if (di_size <= block_size){
         write(1, &buff[block_index], di_size);
         di_size = 0;
@@ -233,3 +230,4 @@ uint64_t find_inode_index(uint32_t inode_entry){
     return inode_index;
 
 }
+	
