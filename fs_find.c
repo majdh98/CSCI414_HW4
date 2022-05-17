@@ -10,6 +10,21 @@
 #include "dir.h"
 
 
+void traverse_dir_inode(uint64_t inode_index, char* preface);
+void traverse_dir_data_block(uint64_t block_index, uint64_t di_size,  char* preface);
+uint64_t find_inode_index(uint32_t inode_entry);
+
+//to be filled once super block is found
+struct fs* super_block;
+int frag_size;// in bytes
+int block_size;
+int num_cgroup; // number of cylindrical groups
+int size_cgroup;
+uint64_t* cs_inode_table; // an array that holds the starting location
+                         // for the cylindar's inode table
+
+void * buff; //a buffer to store disk raw bits
+
 
 
 int main(int argc, char *argv[])
@@ -21,7 +36,7 @@ int main(int argc, char *argv[])
     }
     int size = lseek(fp, 0, SEEK_END); // get offset at end of file
     lseek(fp, 0, SEEK_SET); // seek back to beginning
-    void * buff = malloc(size+1); // allocate enough memory.
+    buff = malloc(size+1); // allocate enough memory.
     read(fp, buff, size);  // read in the file
 
 
@@ -46,14 +61,15 @@ int main(int argc, char *argv[])
     had the same magic number we are looking for. Thus, the super block for
     ada1p1 starts at 64k.
     */
-    struct fs* super_block = (struct fs*)&buff[65536];
-    int frag_size = super_block -> fs_fsize;// in bytes
-    int block_size = super_block ->fs_bsize;
-    int num_cgroup = super_block -> fs_ncg; // number of cylindrical groups
-    int size_cgroup = super_block -> fs_cgsize; //size of cylindrical group
+    super_block = (struct fs*)&buff[65536];
+    frag_size = super_block -> fs_fsize;// in bytes
+    block_size = super_block ->fs_bsize;
+    num_cgroup = super_block -> fs_ncg; // number of cylindrical groups
+    size_cgroup = super_block -> fs_cgsize; //size of cylindrical group
 
     /*an array that holds the starting location for the cylindar's inode table*/
-    uint64_t cs_inode_table [num_cgroup];
+    uint64_t temp [num_cgroup];
+    cs_inode_table = temp;
     for (int i = 0; i< num_cgroup; i++){
     	cs_inode_table[i] = cgimin(super_block, i)*frag_size;
     }
@@ -63,7 +79,6 @@ int main(int argc, char *argv[])
     printf("frag size: %d\n", frag_size);
     printf("inode size: %d\n", 256);
     printf("super block: %d\n", 65536);
-    printf("c0: %ld\n", cgbase(super_block, 0));
 	/*for this test file, the number of cylinders is 4. The parent directory is located in inode 2 of c group 0.
 	// from dinode.h:
 
@@ -73,139 +88,151 @@ int main(int argc, char *argv[])
 		 * numerous dump tapes make this assumption, so we are stuck with it).
 	*/
 	int c0_inode_table = cgimin(super_block, 0)*frag_size;
-	int inode_2_loc = c0_inode_table + 2*256;
-    struct ufs2_dinode* inode_2 = (struct ufs2_dinode*)&buff[inode_2_loc];
+	int root_inode_loc = cs_inode_table[0] + 2*256;
 
-    int root_dir_loc = inode_2->di_db[0]*frag_size;
-    struct	direct* root_dir = ( struct direct *)&buff[root_dir_loc];
-
-
-
-
+    traverse_dir_inode(root_inode_loc, "");
+    // struct ufs2_dinode* root_inode = (struct ufs2_dinode*)&buff[root_inode_loc];
+    //
+    // int root_dir_loc = root_inode->di_db[0]*frag_size;
+    // struct	direct* root_dir = ( struct direct *)&buff[root_dir_loc];
+    //
+    //
+    //
+    //
+    // // write(1, "\n", 1);
+    // // write(1, (buff+root_dir_loc), 512);
+    // // write(1, "\n", 1);
+    //
+    // // printf("root_dir inode num: %d\n",root_dir->d_ino);
+    // // printf("root_dir record length: %d\n",root_dir->d_reclen);
+    // // printf("root_dir file type: %d\n",root_dir->d_type);
+    // // printf("length of string in dname: %d\n",root_dir->d_namlen);
+    // write(1, root_dir->d_name, root_dir->d_namlen);
     // write(1, "\n", 1);
-    // write(1, (buff+root_dir_loc), 512);
+    //
+    // root_dir_loc = root_dir_loc+root_dir->d_reclen;
+    // root_dir = ( struct direct *)&buff[root_dir_loc];
+    // // printf("root_dir inode num: %d\n",root_dir->d_ino);
+    // // printf("root_dir record length: %d\n",root_dir->d_reclen);
+    // // printf("root_dir file type: %d\n",root_dir->d_type);
+    // // printf("length of string in dname: %d\n",root_dir->d_namlen);
+    // write(1, root_dir->d_name, root_dir->d_namlen);
     // write(1, "\n", 1);
-
-    // printf("root_dir inode num: %d\n",root_dir->d_ino);
-    // printf("root_dir record length: %d\n",root_dir->d_reclen);
-    // printf("root_dir file type: %d\n",root_dir->d_type);
-    // printf("length of string in dname: %d\n",root_dir->d_namlen);
-    write(1, root_dir->d_name, root_dir->d_namlen);
-    write(1, "\n", 1);
-
-    root_dir_loc = root_dir_loc+root_dir->d_reclen;
-    root_dir = ( struct direct *)&buff[root_dir_loc];
-    // printf("root_dir inode num: %d\n",root_dir->d_ino);
-    // printf("root_dir record length: %d\n",root_dir->d_reclen);
-    // printf("root_dir file type: %d\n",root_dir->d_type);
-    // printf("length of string in dname: %d\n",root_dir->d_namlen);
-    write(1, root_dir->d_name, root_dir->d_namlen);
-    write(1, "\n", 1);
-
-    root_dir_loc = root_dir_loc+root_dir->d_reclen;
-    root_dir = ( struct direct *)&buff[root_dir_loc];
-    // printf("root_dir inode num: %d\n",root_dir->d_ino);
-    // printf("root_dir record length: %d\n",root_dir->d_reclen);
-    // printf("root_dir file type: %d\n",root_dir->d_type);
-    // printf("length of string in dname: %d\n",root_dir->d_namlen);
-    write(1, root_dir->d_name, root_dir->d_namlen);
-    write(1, "\n", 1);
-
-	// this is file1 directory entry. Its inode is 3
-    root_dir_loc = root_dir_loc+root_dir->d_reclen;
-    root_dir = ( struct direct *)&buff[root_dir_loc];
-    // printf("root_dir inode num: %d\n",root_dir->d_ino);
-    // printf("root_dir record length: %d\n",root_dir->d_reclen);
-    // printf("root_dir file type: %d\n",root_dir->d_type);
-    // printf("length of string in dname: %d\n",root_dir->d_namlen);
-    write(1, root_dir->d_name, root_dir->d_namlen);
-    write(1, "\n", 1);
-
-    // //inode 3 must exists within cylindar 0:
-    // int inode_file1_loc = cs_inode_table[0] + root_dir->d_ino*256;
-    // struct ufs2_dinode* file1_inode = (struct ufs2_dinode*)&buff[inode_file1_loc];
-    // uint64_t data_loc = file1_inode->	di_db[0]*frag_size;
     //
+    // root_dir_loc = root_dir_loc+root_dir->d_reclen;
+    // root_dir = ( struct direct *)&buff[root_dir_loc];
+    // // printf("root_dir inode num: %d\n",root_dir->d_ino);
+    // // printf("root_dir record length: %d\n",root_dir->d_reclen);
+    // // printf("root_dir file type: %d\n",root_dir->d_type);
+    // // printf("length of string in dname: %d\n",root_dir->d_namlen);
+    // write(1, root_dir->d_name, root_dir->d_namlen);
     // write(1, "\n", 1);
-    // write(1, (buff+data_loc), file1_inode->di_size);
+    //
+	// // this is file1 directory entry. Its inode is 3
+    // root_dir_loc = root_dir_loc+root_dir->d_reclen;
+    // root_dir = ( struct direct *)&buff[root_dir_loc];
+    // // printf("root_dir inode num: %d\n",root_dir->d_ino);
+    // // printf("root_dir record length: %d\n",root_dir->d_reclen);
+    // // printf("root_dir file type: %d\n",root_dir->d_type);
+    // // printf("length of string in dname: %d\n",root_dir->d_namlen);
+    // write(1, root_dir->d_name, root_dir->d_namlen);
     // write(1, "\n", 1);
-
-
-    root_dir_loc = root_dir_loc+root_dir->d_reclen;
-    root_dir = ( struct direct *)&buff[root_dir_loc];
-    // printf("root_dir inode num: %d\n",root_dir->d_ino);
-    // printf("root_dir record length: %d\n",root_dir->d_reclen);
-    // printf("root_dir file type: %d\n",root_dir->d_type);
-    // printf("length of string in dname: %d\n",root_dir->d_namlen);
-    write(1, root_dir->d_name, root_dir->d_namlen);
-    write(1, "\n", 1);
-
-
-
-
-
-    root_dir_loc = root_dir_loc+root_dir->d_reclen;
-    root_dir = ( struct direct *)&buff[root_dir_loc];
-    // printf("root_dir inode num: %d\n",root_dir->d_ino);
-    // printf("root_dir record length: %d\n",root_dir->d_reclen);
-    // printf("root_dir file type: %d\n",root_dir->d_type);
-    // printf("length of string in dname: %d\n",root_dir->d_namlen);
-    write(1, root_dir->d_name, root_dir->d_namlen);
-    write(1, "\n", 1);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	// int c0_base = cgbase(super_block, 0);
-	// int c0_sb = cgsblock(super_block, 0);
-	// int c0_start = cgstart(super_block, 0);
-	// int c0_block = cgtod(super_block, 0);
-	// printf("c0 start: %d\n", c0_start );
-	// printf("base of c0: %d\n", c0_base) ;
-	// printf("location of sb in c0: %d\n", c0_sb);
-	// printf("c0 cg block: %d\n", c0_block);
-	// printf("location of first inode table: %d\n", c0_inode_table);
+    //
+    // // //inode 3 must exists within cylindar 0:
+    // // int inode_file1_loc = cs_inode_table[0] + root_dir->d_ino*256;
+    // // struct ufs2_dinode* file1_inode = (struct ufs2_dinode*)&buff[inode_file1_loc];
+    // // uint64_t data_loc = file1_inode->	di_db[0]*frag_size;
+    // //
+    // // write(1, "\n", 1);
+    // // write(1, (buff+data_loc), file1_inode->di_size);
+    // // write(1, "\n", 1);
+    //
+    //
+    // root_dir_loc = root_dir_loc+root_dir->d_reclen;
+    // root_dir = ( struct direct *)&buff[root_dir_loc];
+    // // printf("root_dir inode num: %d\n",root_dir->d_ino);
+    // // printf("root_dir record length: %d\n",root_dir->d_reclen);
+    // // printf("root_dir file type: %d\n",root_dir->d_type);
+    // // printf("length of string in dname: %d\n",root_dir->d_namlen);
+    // write(1, root_dir->d_name, root_dir->d_namlen);
+    // write(1, "\n", 1);
     //
     //
     //
-    // int c1_super = cgsblock(super_block, 0);
-    // printf("sssss%dssssss\n", c1_super*4096);
-    // printf("fragment number of sb in c1: %d\n", c1_super);
-    // struct fs* super_block1 = (struct fs*)&buff[c1_super*4096];
-    // printf("%d\n", super_block1->fs_magic);
-	// printf("fragment number of c1: %ld\n", cgbase(super_block, 1));
-    // printf("fragment size: %d\n", frag_size);
     //
     //
-    // printf("%d", super_block->fs_magic);
+    // root_dir_loc = root_dir_loc+root_dir->d_reclen;
+    // root_dir = ( struct direct *)&buff[root_dir_loc];
+    // // printf("root_dir inode num: %d\n",root_dir->d_ino);
+    // // printf("root_dir record length: %d\n",root_dir->d_reclen);
+    // // printf("root_dir file type: %d\n",root_dir->d_type);
+    // // printf("length of string in dname: %d\n",root_dir->d_namlen);
+    // write(1, root_dir->d_name, root_dir->d_namlen);
+    // write(1, "\n", 1);
+    free(buff);
+}
+
+// index in bytes
+void traverse_dir_inode(uint64_t inode_index, char* preface){
+    struct ufs2_dinode* inode = (struct ufs2_dinode*)&buff[inode_index];
+    for (int i = 0; i < UFS_NDADDR; i++){
+        if (inode->di_db[i] == 0){
+            break;
+        }
+        uint64_t block_index = inode->di_db[i]*frag_size;
+        traverse_dir_data_block(block_index, inode->di_size, preface);
+
+    }
 
 
+}
 
+//index in bytes
+void traverse_dir_data_block(uint64_t block_index, uint64_t di_size, char* preface){
+    struct direct* dir = (struct direct *)&buff[block_index];
+    char* temp = malloc(sizeof(preface) +  UFS_MAXNAMLEN);
 
+    while(dir->d_ino != 0){
+        if (strcmp(".",  dir->d_name)) {
+            if (strcmp("..",  dir->d_name)){
+                strcpy(temp, preface);
+                strcat(temp, dir->d_name);
+                printf("%s\n", temp);
+                if (dir->d_type == DT_DIR){
+                    char* temp2 = malloc(sizeof(preface) + 5);
+                    strcpy(temp2, preface);
+                    strcat(temp2, "   ");
+                    //find inode index and pass it to traverse_dir_inode
+                    uint64_t inode_index = find_inode_index(dir->d_ino);
+                    traverse_dir_inode(inode_index, temp2);
+
+                    free(temp2);
+                }
+            }
+        }
+
+        block_index = block_index + dir->d_reclen;
+        dir = ( struct direct *)&buff[block_index];
+    }
+    free(temp);
+}
+
+uint64_t find_inode_index(uint32_t inode_entry){
+
+    uint64_t inode_index = 0;
+    uint64_t c_index;
+    struct cg* c;
+    for (int i = 0; i<num_cgroup; i++){
+        c_index = cgtod(super_block, i)*frag_size;
+        c =  (struct cg*)&buff[c_index];
+        if (inode_entry > c->cg_niblk){
+            inode_entry -= c->cg_niblk;
+        }else{
+            inode_index = cs_inode_table[i] + inode_entry*256;
+            break;
+        }
+    }
+
+	return inode_index;
 
 }
