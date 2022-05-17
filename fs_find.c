@@ -91,84 +91,6 @@ int main(int argc, char *argv[])
 	int root_inode_loc = cs_inode_table[0] + 2*256;
 
     traverse_dir_inode(root_inode_loc, "");
-    // struct ufs2_dinode* root_inode = (struct ufs2_dinode*)&buff[root_inode_loc];
-    //
-    // int root_dir_loc = root_inode->di_db[0]*frag_size;
-    // struct	direct* root_dir = ( struct direct *)&buff[root_dir_loc];
-    //
-    //
-    //
-    //
-    // // write(1, "\n", 1);
-    // // write(1, (buff+root_dir_loc), 512);
-    // // write(1, "\n", 1);
-    //
-    // // printf("root_dir inode num: %d\n",root_dir->d_ino);
-    // // printf("root_dir record length: %d\n",root_dir->d_reclen);
-    // // printf("root_dir file type: %d\n",root_dir->d_type);
-    // // printf("length of string in dname: %d\n",root_dir->d_namlen);
-    // write(1, root_dir->d_name, root_dir->d_namlen);
-    // write(1, "\n", 1);
-    //
-    // root_dir_loc = root_dir_loc+root_dir->d_reclen;
-    // root_dir = ( struct direct *)&buff[root_dir_loc];
-    // // printf("root_dir inode num: %d\n",root_dir->d_ino);
-    // // printf("root_dir record length: %d\n",root_dir->d_reclen);
-    // // printf("root_dir file type: %d\n",root_dir->d_type);
-    // // printf("length of string in dname: %d\n",root_dir->d_namlen);
-    // write(1, root_dir->d_name, root_dir->d_namlen);
-    // write(1, "\n", 1);
-    //
-    // root_dir_loc = root_dir_loc+root_dir->d_reclen;
-    // root_dir = ( struct direct *)&buff[root_dir_loc];
-    // // printf("root_dir inode num: %d\n",root_dir->d_ino);
-    // // printf("root_dir record length: %d\n",root_dir->d_reclen);
-    // // printf("root_dir file type: %d\n",root_dir->d_type);
-    // // printf("length of string in dname: %d\n",root_dir->d_namlen);
-    // write(1, root_dir->d_name, root_dir->d_namlen);
-    // write(1, "\n", 1);
-    //
-	// // this is file1 directory entry. Its inode is 3
-    // root_dir_loc = root_dir_loc+root_dir->d_reclen;
-    // root_dir = ( struct direct *)&buff[root_dir_loc];
-    // // printf("root_dir inode num: %d\n",root_dir->d_ino);
-    // // printf("root_dir record length: %d\n",root_dir->d_reclen);
-    // // printf("root_dir file type: %d\n",root_dir->d_type);
-    // // printf("length of string in dname: %d\n",root_dir->d_namlen);
-    // write(1, root_dir->d_name, root_dir->d_namlen);
-    // write(1, "\n", 1);
-    //
-    // // //inode 3 must exists within cylindar 0:
-    // // int inode_file1_loc = cs_inode_table[0] + root_dir->d_ino*256;
-    // // struct ufs2_dinode* file1_inode = (struct ufs2_dinode*)&buff[inode_file1_loc];
-    // // uint64_t data_loc = file1_inode->	di_db[0]*frag_size;
-    // //
-    // // write(1, "\n", 1);
-    // // write(1, (buff+data_loc), file1_inode->di_size);
-    // // write(1, "\n", 1);
-    //
-    //
-    // root_dir_loc = root_dir_loc+root_dir->d_reclen;
-    // root_dir = ( struct direct *)&buff[root_dir_loc];
-    // // printf("root_dir inode num: %d\n",root_dir->d_ino);
-    // // printf("root_dir record length: %d\n",root_dir->d_reclen);
-    // // printf("root_dir file type: %d\n",root_dir->d_type);
-    // // printf("length of string in dname: %d\n",root_dir->d_namlen);
-    // write(1, root_dir->d_name, root_dir->d_namlen);
-    // write(1, "\n", 1);
-    //
-    //
-    //
-    //
-    //
-    // root_dir_loc = root_dir_loc+root_dir->d_reclen;
-    // root_dir = ( struct direct *)&buff[root_dir_loc];
-    // // printf("root_dir inode num: %d\n",root_dir->d_ino);
-    // // printf("root_dir record length: %d\n",root_dir->d_reclen);
-    // // printf("root_dir file type: %d\n",root_dir->d_type);
-    // // printf("length of string in dname: %d\n",root_dir->d_namlen);
-    // write(1, root_dir->d_name, root_dir->d_namlen);
-    // write(1, "\n", 1);
     free(buff);
 }
 
@@ -176,7 +98,6 @@ int main(int argc, char *argv[])
 void traverse_dir_inode(uint64_t inode_index, char* preface){
     struct ufs2_dinode* inode = (struct ufs2_dinode*)&buff[inode_index];
     for (int i = 0; i < UFS_NDADDR; i++){
-    	printf("%d\n", i);
         if (inode->di_db[i] == 0){
             break;
         }
@@ -191,7 +112,7 @@ void traverse_dir_inode(uint64_t inode_index, char* preface){
 //index in bytes
 void traverse_dir_data_block(uint64_t block_index, uint64_t di_size, char* preface){
     struct direct* dir = (struct direct *)&buff[block_index];
-    char* temp = malloc(sizeof(preface) +  UFS_MAXNAMLEN);
+    char* temp = malloc(strlen(preface) +  UFS_MAXNAMLEN);
 
     while(dir->d_ino != 0){
         if (strcmp(".",  dir->d_name)) {
@@ -200,7 +121,7 @@ void traverse_dir_data_block(uint64_t block_index, uint64_t di_size, char* prefa
                 strcat(temp, dir->d_name);
                 printf("%s\n", temp);
                 if (dir->d_type == DT_DIR){
-                    char* temp2 = malloc(sizeof(preface) + 5);
+                    char* temp2 = malloc(strlen(preface) + 5);
                     strcpy(temp2, preface);
                     strcat(temp2, "   ");
                     //find inode index and pass it to traverse_dir_inode
