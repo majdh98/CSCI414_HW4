@@ -225,7 +225,7 @@ uint64_t find_inode_index(uint32_t inode_entry){
     for (int i = 0; i<num_cgroup; i++){
         c_index = cgtod(super_block, i)*frag_size;
         c =  (struct cg*)&buff[c_index];
-        if (inode_entry > c->cg_niblk){
+        if (inode_entry >= c->cg_niblk){
             inode_entry -= c->cg_niblk;
         }else{
             inode_index = cs_inode_table[i] + inode_entry*256;
