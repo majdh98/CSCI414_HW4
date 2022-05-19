@@ -3,3 +3,19 @@
 
 gpart create -s GPT ada1
 gpart add -t freebsd-ufs -s 30M ada1
+
+
+
+# creates a large file
+# creates 1,048,500 y\n in 2mb_file
+yes  |head -c 2097000 > 2mb_file
+yes last | head -n 1 >> 2mb_file
+
+or 
+
+seq 1 2097000 > 2mb
+
+
+
+# create .img of partition ada1p1
+dd if=/dev/ada1p1 of=/p5.img

@@ -16,6 +16,10 @@ void traverse_file_inode(uint64_t inode_index);
 uint64_t print_file_data_block(uint64_t block_index, uint64_t di_size);
 uint64_t find_inode_index(uint32_t inode_entry);
 void fill_tokens(char* path);
+uint64_t traverse_indirect_block (uint64_t iblock, uint64_t size);
+uint64_t find_block_index(uint32_t block_entry);
+uint64_t traverse_double_indirect_block (uint64_t iblock, uint64_t size);
+uint64_t traverse_triple_indirect_block (uint64_t iblock, uint64_t size);
 
 
 
@@ -88,6 +92,7 @@ int main(int argc, char *argv[])
         cs_inode_table[i] = cgimin(super_block, i)*frag_size;
     }
 
+    //printf("%d\n", cgdata(super_block, 0));
 
     // printf("block size: %d\n", block_size);
     // printf("frag size: %d\n", frag_size);
@@ -196,7 +201,59 @@ void traverse_file_inode(uint64_t inode_index){
         size = print_file_data_block(block_index, size);
 
     }
+    if (inode->di_ib[0] != 0){
+        size = traverse_indirect_block(inode->di_ib[0], size);
+    }
+    if (inode->di_db[1] != 0){
+        size = traverse_double_indirect_block(inode->di_ib[1], size);
+    }
+    if (inode->di_db[2] != 0){
+        size = traverse_triple_indirect_block(inode->di_ib[2], size);
+    }
 
+
+}
+
+uint64_t traverse_indirect_block (uint64_t iblock, uint64_t size){
+    uint64_t iblock_index = iblock*frag_size;
+    ufs2_daddr_t block_index;
+    int blocks_addresses_counter = 0;
+
+    while (size != 0 && blocks_addresses_counter*sizeof(ufs2_daddr_t) != block_size) {
+        block_index = *((ufs2_daddr_t*) &buff[iblock_index + blocks_addresses_counter*sizeof(ufs2_daddr_t)]);
+        blocks_addresses_counter++;
+        size = print_file_data_block(block_index*frag_size, size);
+    }
+
+    return size;
+}
+
+uint64_t traverse_double_indirect_block (uint64_t iblock, uint64_t size){
+    uint64_t iblock_index = iblock*frag_size;
+    ufs2_daddr_t block_index;
+    int blocks_addresses_counter = 0;
+
+    while (size != 0 && blocks_addresses_counter*sizeof(ufs2_daddr_t) != block_size) {
+        block_index = *((ufs2_daddr_t*) &buff[iblock_index + blocks_addresses_counter*sizeof(ufs2_daddr_t)]);
+        blocks_addresses_counter++;
+        size = traverse_indirect_block(block_index*frag_size, size);
+    }
+
+    return size;
+}
+
+uint64_t traverse_triple_indirect_block (uint64_t iblock, uint64_t size){
+    uint64_t iblock_index = iblock*frag_size;
+    ufs2_daddr_t block_index;
+    int blocks_addresses_counter = 0;
+
+    while (size != 0 && blocks_addresses_counter*sizeof(ufs2_daddr_t) != block_size) {
+        block_index = *((ufs2_daddr_t*) &buff[iblock_index + blocks_addresses_counter*sizeof(ufs2_daddr_t)]);
+        blocks_addresses_counter++;
+        size = traverse_double_indirect_block(block_index*frag_size, size);
+    }
+
+    return size;
 }
 
 uint64_t print_file_data_block(uint64_t block_index, uint64_t di_size){
@@ -205,7 +262,7 @@ uint64_t print_file_data_block(uint64_t block_index, uint64_t di_size){
         di_size = 0;
     }else{
         write(1, &buff[block_index], block_size);
-        di_size = 0;
+        di_size -=block_size;
     }
 
     return di_size;
@@ -214,8 +271,9 @@ uint64_t print_file_data_block(uint64_t block_index, uint64_t di_size){
 uint64_t find_inode_index(uint32_t inode_entry){
 
     uint64_t inode_index = 0;
-    uint64_t c_index;
+    uint64_t c_index; // cylindar index
     struct cg* c;
+
     for (int i = 0; i<num_cgroup; i++){
         c_index = cgtod(super_block, i)*frag_size;
         c =  (struct cg*)&buff[c_index];
@@ -230,4 +288,14 @@ uint64_t find_inode_index(uint32_t inode_entry){
     return inode_index;
 
 }
-	
+
+
+uint64_t find_block_index(uint32_t block_entry){
+
+    uint64_t block_index = 0;
+    uint64_t c_index= dtog(super_block, block_entry); // cylindar index
+    block_index = (cgdmin(super_block, c_index) + dtogd(super_block, block_entry))*frag_size;
+
+    return block_index;
+
+}
